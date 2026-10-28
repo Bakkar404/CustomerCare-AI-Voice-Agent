@@ -1,0 +1,6 @@
+{
+  "action": "create_complaint",
+  "customer_name": "Demo Customer",
+  "order_id": "DEMO-1001",
+  "issue_description": "The demo order arrived with a damaged item."
+}
