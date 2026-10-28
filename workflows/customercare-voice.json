@@ -1,0 +1,418 @@
+{
+  "name": "CustomerCare AI - Voice Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customercare-voice",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        192
+      ],
+      "id": "a3c71499-f643-416d-b6fd-36be88a5866a",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "=\n{{ JSON.stringify({\n  success: !!$json.Complaint_ID,\n  complaint_id: $json.Complaint_ID || null,\n  status: $json.Status || null,\n  message: $json.Complaint_ID\n    ? \"Complaint \" + $json.Complaint_ID +\n      \" is currently \" + $json.Status +\n      \". Issue: \" + $json.Issue_Description\n    : \"I couldn't find that complaint number. Please check the reference and try again.\"\n}) }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        0
+      ],
+      "id": "fb9c25d3-028a-47e4-ad49-56a5c10226d8",
+      "name": "Respond to Webhook",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SPREADSHEET_ID",
+          "__rl": true
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Voice_Complaints",
+          "__rl": true
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        0
+      ],
+      "id": "447b8791-adfb-48fb-9750-c2de32a0954a",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "check_status",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "52c5ed93-8746-452c-8524-9ef025bc03a7"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "fa8d3d7f-7c04-4a30-839f-3283c14fa642",
+                    "leftValue": "={{ $json.body.action }}",
+                    "rightValue": "create_complaint",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        192
+      ],
+      "id": "779b5071-1b9d-46b0-9d21-b1139264a6a2",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SPREADSHEET_ID",
+          "__rl": true
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Voice_Complaints",
+          "__rl": true
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Complaint_ID": "={{ Date.now().toString() }}",
+            "Customer_Name": "={{ $('Webhook').first().json.body.customer_name }}",
+            "Order_ID": "={{ $('Webhook').first().json.body.order_id }}",
+            "Issue_Description": "={{ $('Webhook').first().json.body.issue_description }}",
+            "Status": "Open",
+            "Created_Date": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "Channel": "Voice"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Complaint_ID",
+              "displayName": "Complaint_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Order_ID",
+              "displayName": "Order_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Issue_Description",
+              "displayName": "Issue_Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created_Date",
+              "displayName": "Created_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Channel",
+              "displayName": "Channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        192
+      ],
+      "id": "0fb15653-f3d1-400f-9873-5638de5bf951",
+      "name": "Append row in sheet"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "=\n{{ JSON.stringify({\n  success: true,\n  complaint_id: $json.Complaint_ID,\n  status: \"Open\",\n  message: \"Your complaint has been registered successfully. Your complaint reference number is \" + $json.Complaint_ID\n}) }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        192
+      ],
+      "id": "03201903-8ea4-412c-8af7-4c5ccdd47c96",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "16be4537-8fde-482a-91de-cba394cad28e",
+              "leftValue": "={{ !!($json.body.customer_name?.trim() && $json.body.order_id?.trim() && $json.body.issue_description?.trim()) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        288
+      ],
+      "id": "1b02b577-cc9f-4140-8055-ebd65a7d512c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "\n{\n  \"success\": false,\n  \"message\": \"Complaint not created. Please provide your name, order number, and a description of the issue.\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        384
+      ],
+      "id": "e7e6906d-e513-49af-9e9e-d0ac07e07788",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "91471187-23b9-4ab5-a935-7ea219bf6813",
+              "leftValue": "={{ String($json.Complaint_ID) }}",
+              "rightValue": "={{ String($('Webhook').first().json.body.complaint_id) }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        672,
+        0
+      ],
+      "id": "f93ba458-216b-4493-87d9-b7d58389c429",
+      "name": "Filter",
+      "alwaysOutputData": true
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
